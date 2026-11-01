@@ -40,7 +40,6 @@ class ElfDynamicStructure(
                 ElfDynamicConstants.DT_FINI_ARRAYSZ -> "DT_FINI_ARRAYSZ"
                 ElfDynamicConstants.DT_RUNPATH -> "DT_RUNPATH"
                 ElfDynamicConstants.DT_FLAGS -> "DT_FLAGS"
-                ElfDynamicConstants.DT_ENCODING -> "DT_ENCODING"
                 ElfDynamicConstants.DT_PREINIT_ARRAY -> "DT_PREINIT_ARRAY"
                 ElfDynamicConstants.DT_PREINIT_ARRAYSZ -> "DT_PREINIT_ARRAYSZ"
                 ElfDynamicConstants.DT_SYMTAB_SHNDX -> "DT_SYMTAB_SHNDX"
@@ -51,7 +50,6 @@ class ElfDynamicStructure(
                 ElfDynamicConstants.DT_LOOS -> "DT_LOOS"
                 ElfDynamicConstants.DT_HIOS -> "DT_HIOS"
                 ElfDynamicConstants.DT_LOPROC -> "DT_LOPROC"
-                ElfDynamicConstants.DT_HIPROC -> "DT_HIPROC"
                 ElfDynamicConstants.DT_VALRNGLO -> "DT_VALRNGLO"
                 ElfDynamicConstants.DT_GNU_PRELINKED -> "DT_GNU_PRELINKED"
                 ElfDynamicConstants.DT_GNU_CONFLICTSZ -> "DT_GNU_CONFLICTSZ"
@@ -64,7 +62,6 @@ class ElfDynamicStructure(
                 ElfDynamicConstants.DT_POSFLAG_1 -> "DT_POSFLAG_1"
                 ElfDynamicConstants.DT_SYMINSZ -> "DT_SYMINSZ"
                 ElfDynamicConstants.DT_SYMINENT -> "DT_SYMINENT"
-                ElfDynamicConstants.DT_VALRNGHI -> "DT_VALRNGHI"
                 ElfDynamicConstants.DT_ADDRRNGLO -> "DT_ADDRRNGLO"
                 ElfDynamicConstants.DT_GNU_HASH -> "DT_GNU_HASH"
                 ElfDynamicConstants.DT_TLSDESC_PLT -> "DT_TLSDESC_PLT"
@@ -77,7 +74,6 @@ class ElfDynamicStructure(
                 ElfDynamicConstants.DT_PLTPAD -> "DT_PLTPAD"
                 ElfDynamicConstants.DT_MOVETAB -> "DT_MOVETAB"
                 ElfDynamicConstants.DT_SYMINFO -> "DT_SYMINFO"
-                ElfDynamicConstants.DT_ADDRRNGHI -> "DT_ADDRRNGHI"
                 ElfDynamicConstants.DT_VERSYM -> "DT_VERSYM"
                 ElfDynamicConstants.DT_RELACOUNT -> "DT_RELACOUNT"
                 ElfDynamicConstants.DT_RELCOUNT -> "DT_RELCOUNT"
@@ -169,13 +165,13 @@ class ElfDynamicStructure(
                     , ElfDynamicConstants.DT_TLSDESC_GOT, ElfDynamicConstants.DT_GNU_CONFLICT
                     , ElfDynamicConstants.DT_GNU_LIBLIST, ElfDynamicConstants.DT_CONFIG, ElfDynamicConstants.DT_DEPAUDIT
                     , ElfDynamicConstants.DT_AUDIT, ElfDynamicConstants.DT_PLTPAD, ElfDynamicConstants.DT_MOVETAB
-                    , ElfDynamicConstants.DT_SYMINFO, ElfDynamicConstants.DT_ADDRRNGHI -> true
+                    , ElfDynamicConstants.DT_SYMINFO -> true
                 // DT_VALRNGLO (0x6ffffd00) 到 DT_VALRNGHI (0x6ffffdff) 之间解释为数值
                 ElfDynamicConstants.DT_VALRNGLO, ElfDynamicConstants.DT_GNU_PRELINKED, ElfDynamicConstants.DT_GNU_CONFLICTSZ
                     , ElfDynamicConstants.DT_GNU_LIBLISTSZ, ElfDynamicConstants.DT_CHECKSUM, ElfDynamicConstants.DT_PLTPADSZ
                     , ElfDynamicConstants.DT_MOVEENT, ElfDynamicConstants.DT_MOVESZ, ElfDynamicConstants.DT_FEATURE_1
-                    , ElfDynamicConstants.DT_POSFLAG_1, ElfDynamicConstants.DT_SYMINSZ, ElfDynamicConstants.DT_SYMINENT
-                    , ElfDynamicConstants.DT_VALRNGHI -> false
+                    , ElfDynamicConstants.DT_POSFLAG_1, ElfDynamicConstants.DT_SYMINSZ, ElfDynamicConstants.DT_SYMINENT -> false
+
 
                 // 规则二（删除了与规则一中重复的选项）：
                 // 常见地址标签应该解释为指针

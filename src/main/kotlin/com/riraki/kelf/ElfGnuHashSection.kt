@@ -17,18 +17,28 @@ class ElfGnuHashSection : ElfSection {
     private val buckets: IntArray
     private val chain: IntArray
 
-    private val mStringTable: ElfStringTableSection
     private val mSymbols: Array<ElfSymbol>
 
     private val ELFCLASS_BITS: UInt
 
     private val chainSize: UInt
 
-    constructor(elfFile: ElfFile, gnuHashSectionHeader: ElfSectionHeader, stringTable: ElfStringTableSection) : super(elfFile, gnuHashSectionHeader) {
-        val symbolTableSectionHeader: ElfSectionHeader = elfFile.sectionHeaders[gnuHashSectionHeader.sh_link.toInt()]
+    constructor(elfFile: ElfFile, gnuHashSectionHeader: ElfSectionHeader) : super(elfFile, gnuHashSectionHeader) {
+        require(gnuHashSectionHeader.sh_link < elfFile.sectionHeaders.size.toUInt()) {
+            "Invalid GNU Hash sh_link: ${gnuHashSectionHeader.sh_link}"
+        }
+
+        val symbolTableSectionHeader = elfFile.sectionHeaders[gnuHashSectionHeader.sh_link.toInt()]
+        require(symbolTableSectionHeader.sh_type == ElfSectionConstants.SHT_DYNSYM) {
+            "GNU Hash sh_link must refer to a dynamic symbol table"
+        }
+
         val symbolTableSection = ElfSymbolTableSection(elfFile, symbolTableSectionHeader)
         mSymbols = symbolTableSection.symbols
         val symbolCount = mSymbols.size.toUInt()
+
+        ELFCLASS_BITS = if (elfFile.is32Bits) 32u else 64u
+
         BufferedInputStream(elfFile.file.inputStream()).use {
             InputStreamHelpers.skipFully(it, gnuHashSectionHeader.sh_offset.toLong())
 
@@ -36,60 +46,92 @@ class ElfGnuHashSection : ElfSection {
             symoffset = InputStreamHelpers.readUInt(it, elfFile.isLittleEndian)
             bloom_size = InputStreamHelpers.readUInt(it, elfFile.isLittleEndian)
             bloom_shift = InputStreamHelpers.readUInt(it, elfFile.isLittleEndian)
-            bloom = ElfParserHelpers.readIntOrLongArray(it, bloom_size.toInt(), elfFile.is32Bits, elfFile.isLittleEndian)
-            buckets = InputStreamHelpers.readIntArrayFully(it, nbucket.toInt(), elfFile.isLittleEndian)
-            // remember that chains' indexes are shifted by symoffset relatively to the symbol table
-            // chainSize = symbols.size - symoffset
-            if (symoffset > symbolCount) {
-                throw IllegalStateException("Invalid GNU Hash symoffset: $symoffset!")
+
+            require(nbucket > 0u) { "Invalid GNU Hash nbucket: $nbucket" }
+            require(bloom_size > 0u) { "Invalid GNU Hash bloom_size: $bloom_size" }
+            require((bloom_size and (bloom_size - 1u)) == 0u) {
+                "GNU Hash bloom_size must be a power of two"
             }
+            require(bloom_shift < 32u) { "Invalid GNU Hash bloom_shift: $bloom_shift" }
+            require(nbucket <= Int.MAX_VALUE.toUInt() && bloom_size <= Int.MAX_VALUE.toUInt()) {
+                "GNU Hash table is too large"
+            }
+            require(symoffset <= symbolCount) {
+                "Invalid GNU Hash symoffset: $symoffset"
+            }
+
             chainSize = symbolCount - symoffset
-            chain = InputStreamHelpers.readIntArrayFully(it, chainSize.toInt(), elfFile.isLittleEndian)
-        }
+            val bloomWordSize = if (elfFile.is32Bits) 4UL else 8UL
+            val requiredSize = 16UL +
+                    bloom_size.toULong() * bloomWordSize +
+                    nbucket.toULong() * 4UL +
+                    chainSize.toULong() * 4UL
+            require(requiredSize <= gnuHashSectionHeader.sh_size) {
+                "GNU Hash table exceeds its section size"
+            }
 
-        ELFCLASS_BITS = if (elfFile.is32Bits) {
-            32u
+            bloom = ElfParserHelpers.readIntOrLongArray(
+                it,
+                bloom_size.toInt(),
+                elfFile.is32Bits,
+                elfFile.isLittleEndian
+            )
+            buckets = InputStreamHelpers.readIntArrayFully(
+                it,
+                nbucket.toInt(),
+                elfFile.isLittleEndian
+            )
+            // Chain indices are relative to symoffset, not to symbol-table index zero.
+            chain = InputStreamHelpers.readIntArrayFully(
+                it,
+                chainSize.toInt(),
+                elfFile.isLittleEndian
+            )
         }
-        else {
-            64u
-        }
-
-        mStringTable = stringTable
     }
 
     fun lookupSymbol(name: String): ElfSymbol? {
         val nameHash: UInt = gnuHash(name)
 
-        val word: ULong = bloom[((nameHash / ELFCLASS_BITS) % bloom_size).toInt()].toULong()
-        val bit1: ULong = 1UL shl (nameHash % ELFCLASS_BITS).toInt()
-        val bit2: ULong = 1UL shl ((nameHash shr bloom_shift.toInt()) % ELFCLASS_BITS).toInt()
-        val mask: ULong = bit1 or bit2
+        val bloomIndex = ((nameHash / ELFCLASS_BITS) % bloom_size).toInt()
+        val word: ULong = bloom[bloomIndex].toULong()
+        val bit1 = 1UL shl (nameHash % ELFCLASS_BITS).toInt()
+        val bit2 = 1UL shl ((nameHash shr bloom_shift.toInt()) % ELFCLASS_BITS).toInt()
+        val mask = bit1 or bit2
 
-        /* If at least one bit is not set, a symbol is surely missing. */
+        // If at least one bit is not set, the symbol is definitely absent.
         if ((word and mask) != mask) {
             return null
         }
 
-        var symix: UInt = buckets[(nameHash % nbucket).toInt()].toUInt()
-        if (symix < symoffset) {
+        val bucketIndex = (nameHash % nbucket).toInt()
+        var symix = buckets[bucketIndex].toUInt()
+        if (symix < symoffset || symix >= mSymbols.size.toUInt()) {
             return null
         }
 
-        /* Loop through the chain. */
-        while (true) {
-            val symname: String = mStringTable.getString(mSymbols[symix.toInt()].st_name.toInt())
-            val hash: UInt = chain[(symix - symoffset).toInt()].toUInt()
-
-            if ((nameHash or 1u) == (hash or 1u) && name == symname) {
-                return mSymbols[symix.toInt()]
+        // Chain indices are relative to symoffset.
+        var visited = 0
+        while (symix < mSymbols.size.toUInt()) {
+            val chainIndex = (symix - symoffset).toInt()
+            if (chainIndex !in chain.indices || visited >= chain.size) {
+                return null
             }
 
-            /* Chain ends with an element with the lowest bit set to 1. */
+            val symbol = mSymbols[symix.toInt()]
+            val hash = chain[chainIndex].toUInt()
+
+            if ((nameHash or 1u) == (hash or 1u) && name == symbol.name) {
+                return symbol
+            }
+
+            // The low bit marks the final hash in this bucket's chain.
             if ((hash and 1u) != 0u) {
                 break
             }
 
             ++symix
+            ++visited
         }
 
         return null
@@ -99,8 +141,8 @@ class ElfGnuHashSection : ElfSection {
         fun gnuHash(name: String): UInt {
             var h = 5381u
 
-            for (i in name.indices) {
-                h = (h shl 5) + h + name[i].code.toUInt()
+            for (byte in name.toByteArray(Charsets.UTF_8)) {
+                h = (h shl 5) + h + (byte.toInt() and 0xff).toUInt()
             }
 
             return h

@@ -77,8 +77,6 @@ class ElfSectionHeader {
                 ElfSectionConstants.SHT_GNU_verdef -> "SHT_GNU_verdef"
                 ElfSectionConstants.SHT_GNU_verneed -> "SHT_GNU_verneed"
                 ElfSectionConstants.SHT_GNU_versym -> "SHT_GNU_versym"
-                ElfSectionConstants.SHT_HISUNW -> "SHT_HISUNW"
-                ElfSectionConstants.SHT_HIOS -> "SHT_HIOS"
                 ElfSectionConstants.SHT_LOPROC -> "SHT_LOPROC"
                 ElfSectionConstants.SHT_HIPROC -> "SHT_HIPROC"
                 ElfSectionConstants.SHT_LOUSER -> "SHT_LOUSER"

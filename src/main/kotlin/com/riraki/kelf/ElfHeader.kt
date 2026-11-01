@@ -16,9 +16,7 @@ class ElfHeader {
     val ei_osabi: UByte             // System V ABI 标识
     val ei_abiversion: UByte        // ABI 版本字段
 
-    val ei_pad: ByteArray           // 保留填充字节
-
-    val ei_nident: UByte            // 填充字节的长度
+    val ei_pad: ByteArray           // EI_PAD，7 个保留填充字节
 
     val e_type: UShort              // 文件类型
     val e_machine: UShort           // 目标架构
@@ -45,6 +43,7 @@ class ElfHeader {
         val file: File = elfFile.file
         BufferedInputStream(file.inputStream()).use {
             ei_mag = InputStreamHelpers.readByteArrayFully(it, 4)
+            validateMagic()
             ei_class = InputStreamHelpers.readCheckedByte(it).toUByte()
             // 当 ei_class 非法时，抛出异常
             validateClass()
@@ -54,8 +53,7 @@ class ElfHeader {
             ei_version = InputStreamHelpers.readCheckedByte(it).toUByte()
             ei_osabi = InputStreamHelpers.readCheckedByte(it).toUByte()
             ei_abiversion = InputStreamHelpers.readCheckedByte(it).toUByte()
-            ei_pad = InputStreamHelpers.readByteArrayFully(it, 6)
-            ei_nident = InputStreamHelpers.readCheckedByte(it).toUByte()
+            ei_pad = InputStreamHelpers.readByteArrayFully(it, 7)
             e_type = InputStreamHelpers.readUShort(it, isLittleEndian)
             e_machine = InputStreamHelpers.readUShort(it, isLittleEndian)
             e_version = InputStreamHelpers.readUInt(it, isLittleEndian)
@@ -70,6 +68,17 @@ class ElfHeader {
             e_shentsize = InputStreamHelpers.readUShort(it, isLittleEndian)
             e_shnum = InputStreamHelpers.readUShort(it, isLittleEndian)
             e_shstrndx = InputStreamHelpers.readUShort(it, isLittleEndian)
+        }
+    }
+
+    /**
+     * Validate the four-byte ELF identification magic.
+     */
+    fun validateMagic() {
+        if (!ei_mag.contentEquals(ELF_MAGIC)) {
+            throw IllegalArgumentException(
+                "Invalid ELF magic: ${FormatHelpers.toHexSpaceString(ei_mag)}"
+            )
         }
     }
 
@@ -144,7 +153,6 @@ class ElfHeader {
                 ", ei_osabi=$ei_osabi" +
                 ", ei_abiversion=$ei_abiversion" +
                 ", ei_pad=${FormatHelpers.toHexSpaceString(ei_pad)}" +
-                ", ei_nident=$ei_nident" +
                 ", e_type=$e_type" +
                 ", e_machine=\"$machineDescription\"" +
                 ", e_version=$e_version, e_entry=$e_entry" +
@@ -161,6 +169,8 @@ class ElfHeader {
     }
 
     companion object {
+        private val ELF_MAGIC = byteArrayOf(0x7f, 0x45, 0x4c, 0x46)
+
         private const val ELFDATA2LSB = 1
         private const val ELFDATA2MSB = 2
 

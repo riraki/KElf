@@ -16,25 +16,51 @@ class ElfHashSection : ElfSection {
 
     constructor(elfFile: ElfFile, hashSectionHeader: ElfSectionHeader) : super(elfFile, hashSectionHeader) {
         BufferedInputStream(elfFile.file.inputStream()).use {
+            InputStreamHelpers.skipFully(it, hashSectionHeader.sh_offset.toLong())
+
             nbucket = InputStreamHelpers.readUInt(it, elfFile.isLittleEndian)
             nchain = InputStreamHelpers.readUInt(it, elfFile.isLittleEndian)
+
+            require(nbucket > 0u) {
+                "Invalid SysV Hash nbucket: $nbucket"
+            }
+            require(nbucket <= Int.MAX_VALUE.toUInt() && nchain <= Int.MAX_VALUE.toUInt()) {
+                "SysV Hash table is too large"
+            }
+
+            val requiredSize = 8UL + (nbucket.toULong() + nchain.toULong()) * 4UL
+            require(requiredSize <= hashSectionHeader.sh_size) {
+                "SysV Hash table exceeds its section size"
+            }
+
             buckets = InputStreamHelpers.readIntArrayFully(it, nbucket.toInt(), elfFile.isLittleEndian)
             chains = InputStreamHelpers.readIntArrayFully(it, nchain.toInt(), elfFile.isLittleEndian)
         }
     }
 
     fun lookupSymbols(name: String, symbols: Array<ElfSymbol>): ElfSymbol? {
-        val bucketIndex = (elfHash(name) % nbucket).toInt()
-        var symbolIndex = buckets[bucketIndex]
+        if (nbucket == 0u || nchain == 0u) {
+            return null
+        }
 
-        while (symbolIndex != 0) {
-            val symbol = symbols[symbolIndex]
+        val bucketIndex = (elfHash(name) % nbucket).toInt()
+        var symbolIndex = buckets[bucketIndex].toUInt()
+        var remaining = chains.size
+
+        while (symbolIndex != 0u && remaining > 0) {
+            if (symbolIndex >= nchain || symbolIndex >= symbols.size.toUInt()) {
+                return null
+            }
+
+            val index = symbolIndex.toInt()
+            val symbol = symbols[index]
 
             if (symbol.name == name) {
                 return symbol
             }
 
-            symbolIndex = chains[symbolIndex]
+            symbolIndex = chains[index].toUInt()
+            remaining--
         }
 
         return null
@@ -46,8 +72,8 @@ class ElfHashSection : ElfSection {
          */
         fun elfHash(name: String): UInt {
             var h = 0u
-            name.forEach { ch ->
-                h = (h shl 4) + ch.code.toUInt()
+            for (byte in name.toByteArray(Charsets.UTF_8)) {
+                h = (h shl 4) + (byte.toInt() and 0xff).toUInt()
                 val g = h and 0xf0000000u
                 if (g != 0u) {
                     h = h xor (g shr 24)

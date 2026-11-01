@@ -43,7 +43,7 @@ fun inspect(path: String) {
 
 ## Java interoperability
 
-KElf is published as a Kotlin/JVM library and can also be called from Java. The `from` factory is exposed through the companion object:
+KElf is a Kotlin/JVM library and can also be called from Java. The `from` factory is exposed through the companion object:
 
 ```java
 import com.riraki.kelf.ElfFile;
@@ -56,7 +56,7 @@ public final class KElfJavaExample {
             throw new IllegalArgumentException("Usage: KElfJavaExample <elf-file>");
         }
 
-        ElfFile elf = ElfFile.Companion.from(new File(args[0]));
+        ElfFile elf = ElfFile.from(new File(args[0]));
         System.out.println(elf.getElfHeader());
 
         ElfSymbol symbol = elf.getSymbol("JNI_OnLoad");

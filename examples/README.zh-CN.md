@@ -43,7 +43,7 @@ fun inspect(path: String) {
 
 ## Java 互操作
 
-KElf 是 Kotlin/JVM 库，也可以从 Java 调用。`from` 工厂方法通过伴生对象暴露给 Java：
+KElf 是一个 Kotlin/JVM 库，也可以从 Java 调用。`from` 工厂方法通过伴生对象暴露给 Java：
 
 ```java
 import com.riraki.kelf.ElfFile;
@@ -56,7 +56,7 @@ public final class KElfJavaExample {
             throw new IllegalArgumentException("Usage: KElfJavaExample <elf-file>");
         }
 
-        ElfFile elf = ElfFile.Companion.from(new File(args[0]));
+        ElfFile elf = ElfFile.from(new File(args[0]));
         System.out.println(elf.getElfHeader());
 
         ElfSymbol symbol = elf.getSymbol("JNI_OnLoad");

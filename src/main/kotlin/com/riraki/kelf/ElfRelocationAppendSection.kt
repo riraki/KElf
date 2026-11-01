@@ -12,7 +12,7 @@ class ElfRelocationAppendSection(
         val symbolTable = ElfSymbolTableSection(elfFile, symbolTableSectionHeader)
         BufferedInputStream(elfFile.file.inputStream()).use { inputStream ->
             InputStreamHelpers.skipFully(inputStream, relocationAppendSectionHeader.sh_offset.toLong())
-                Array((relocationAppendSectionHeader.sh_size / relocationAppendSectionHeader.sh_entsize).toInt()) {
+            Array((relocationAppendSectionHeader.sh_size / relocationAppendSectionHeader.sh_entsize).toInt()) {
                 val relocationAppendOffset = relocationAppendSectionHeader.sh_offset + it.toULong() * relocationAppendSectionHeader.sh_entsize
                 ElfRelocationAppend(elfFile, relocationAppendOffset, symbolTable)
             }

@@ -33,7 +33,7 @@ class ElfFile {
                 ElfSectionConstants.SHT_RELA -> ElfRelocationAppendSection(this, sectionHeaders[it])
                 ElfSectionConstants.SHT_REL -> ElfRelocationSection(this, sectionHeaders[it])
                 ElfSectionConstants.SHT_HASH -> ElfHashSection(this, sectionHeaders[it])
-                ElfSectionConstants.SHT_GNU_HASH -> ElfGnuHashSection(this, sectionHeaders[it], mStringTable)
+                ElfSectionConstants.SHT_GNU_HASH -> ElfGnuHashSection(this, sectionHeaders[it])
                 ElfSectionConstants.SHT_NOTE -> ElfNoteSection(this, sectionHeaders[it])
                 else -> ElfSection(this, sectionHeaders[it])
             }
@@ -126,6 +126,7 @@ class ElfFile {
     }
 
     companion object {
+        @JvmStatic
         fun from(elfFile: File): ElfFile {
             return ElfFile(elfFile)
         }

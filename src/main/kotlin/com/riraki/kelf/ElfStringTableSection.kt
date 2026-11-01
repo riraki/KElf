@@ -30,7 +30,7 @@ class ElfStringTableSection(
         if (endIndex >= tableBytes.size) {
             throw IllegalStateException("Invalid string table: missing null terminator at offset $startIndex")
         }
-        return String(tableBytes, startIndex, endIndex - startIndex)
+        return String(tableBytes, startIndex, endIndex - startIndex, Charsets.UTF_8)
     }
 
     val tableBytesDescription: String

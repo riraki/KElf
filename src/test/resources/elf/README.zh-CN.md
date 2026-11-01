@@ -8,10 +8,12 @@
 
 - `generated/libnative-lib-armeabi-v7a.so`：使用 Android NDK 测试样本工程构建的 32 位 ARM 共享库。
 - `generated/libnative-lib-arm64-v8a.so`：使用 Android NDK 测试样本工程构建的 64 位 AArch64 共享库。
+- `generated/libhash-sysv-x86_64.so`：包含 SysV Hash 的小型 x86-64 共享库。
+- `generated/libhash-gnu-x86_64.so`：包含 GNU Hash 的小型 x86-64 共享库。
 - `android/arm/libart.so`：32 位 ARM Android Runtime 库样本，项目记录的来源版本为 Android 13 / API Level 33。
 - `android/arm64/libart64.so`：64 位 AArch64 Android Runtime 库样本，项目记录的来源版本为 Android 13 / API Level 33。
 
-前两个生成样本可以使用 `test-fixtures/native-android/build.sh` 重新构建。Android Runtime 库样本是直接提交到仓库的测试输入，不由该脚本生成。
+Android ARM 样本可以使用 `test-fixtures/native-android/build.sh` 重新构建；x86-64 哈希样本可以使用 `test-fixtures/native-linux/build.sh` 重新构建。Android Runtime 库样本是直接提交到仓库的测试输入，不由这两个脚本生成。
 
 ## 再分发提示
 
