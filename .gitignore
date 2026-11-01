@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+**/build/
+
+# Kotlin
+.kotlin/
+
+# IDEs
+.idea/
+*.iml
+out/
+
+# Native fixture build output
+/test-fixtures/native-android/.build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# References
+references
