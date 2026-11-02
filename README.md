@@ -21,7 +21,7 @@
 - **ELF32 and ELF64** — selects the field widths from the ELF file's identification bytes.
 - **Little-endian and big-endian data** — reads multi-byte fields according to `EI_DATA`.
 
-The currently recognized `e_machine` values are `EM_386`, `EM_ARM`, `EM_X86_64`, and `EM_AARCH64`. Recognition of a machine identifier does not imply complete support for every architecture-specific ELF extension or relocation type.
+The currently recognized `e_machine` values are `EM_386(X86)`, `EM_ARM(ARM)`, `EM_X86_64(X86-64)`, and `EM_AARCH64(AARCH64)`. Recognition of a machine identifier does not imply complete support for every architecture-specific ELF extension or relocation type.
 
 ## Requirements
 
@@ -149,8 +149,6 @@ The example prints the ELF header, program headers, section headers, parsed sect
 
 ## Build and test
 
-The Gradle Wrapper is committed to the repository. Use it for builds; there is no need to install the matching Gradle version manually.
-
 ```bash
 # Compile and run the automated tests
 ./gradlew clean test
@@ -195,7 +193,7 @@ KElf/
 
 KElf is an **ELF parser**, not an ELF loader, dynamic linker, disassembler, or emulator. It reads file structures and metadata. It does not map segments into a process, apply relocations, resolve symbols at runtime, or execute machine code.
 
-The set of machine identifiers and architecture-specific relocation names is intentionally limited to the implementations currently present in the library. The checked-in test fixtures currently exercise little-endian ARM32 and AArch64 ELF files; this should not be interpreted as exhaustive validation of every ELF architecture, ABI, or byte order.
+The set of machine identifiers and architecture-specific relocation names is intentionally limited to the implementations currently present in the library.
 
 ## License
 
